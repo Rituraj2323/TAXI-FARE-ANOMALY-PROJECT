@@ -14,7 +14,7 @@ It consists of:
 
 	🌐 Live Demo
 
-👉 Frontend Deployment:
+👉 Deployment:
 https://taxi-anomaly-frontend-xyqv.vercel.app
 
   
