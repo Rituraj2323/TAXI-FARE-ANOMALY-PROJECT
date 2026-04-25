@@ -10,6 +10,13 @@ It consists of:
 	•	An additional Django backend (optional/experimental)
 	•	A notebook for model development
 
+
+
+	🌐 Live Demo
+
+👉 Frontend Deployment:
+https://taxi-anomaly-frontend-xyqv.vercel.app
+
   
   
   🏗️ Project Structure
