@@ -1,6 +1,17 @@
+/**
+ * AnomalyTable Component
+ * Displays a detailed list of detected anomalies in a paginated table.
+ * Includes filtering, sorting, and a visual 'ScoreBar' to indicate anomaly severity.
+ */
+
 import React, { useEffect, useState, useCallback } from 'react';
 import { API } from '../config';
 
+/**
+ * ScoreBar Component
+ * A visual representation of the anomaly score (0-100%).
+ * Color changes from emerald (low) to rose (high) based on the score.
+ */
 function ScoreBar({ score }) {
   // score is 0-100%
   const normalized = Math.min(1, Math.max(0, score / 100));
@@ -8,6 +19,7 @@ function ScoreBar({ score }) {
   return (
     <div className="score-bar-wrap">
       <div className="score-bar-track">
+        {/* The fill width corresponds to the score percentage */}
         <div className="score-bar-fill" style={{ width: `${normalized * 100}%`, background: color }} />
       </div>
       <span style={{ fontSize: '0.8rem', color, minWidth: 50, textAlign: 'right', fontWeight: 700, fontFamily: 'Outfit' }}>
@@ -26,10 +38,16 @@ export default function AnomalyTable({ filters }) {
   const [jumpPage, setJumpPage] = useState('');
   const pageSize = 50;
 
+  /**
+   * fetchData Function
+   * Fetches data from the Django/FastAPI backend using the current filters and page.
+   */
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page, page_size: pageSize });
+      
+      // Apply active filters to the API request
       if (filters?.minFare) params.set('min_fare', filters.minFare);
       if (filters?.maxFare) params.set('max_fare', filters.maxFare);
       if (filters?.dateFrom) params.set('date_from', filters.dateFrom);
@@ -38,21 +56,28 @@ export default function AnomalyTable({ filters }) {
 
       const res = await fetch(`${API}/anomalies?${params}`);
       const data = await res.json();
+      
       setRows(data.results || []);
       setTotal(data.total || 0);
     } catch (e) {
-      console.error(e);
+      console.error("Error fetching anomaly data:", e);
     } finally {
       setLoading(false);
     }
   }, [page, filters]);
 
+  // Reset to first page whenever filters change
   useEffect(() => { setPage(1); }, [filters]);
+  
+  // Re-fetch data whenever page or filters change
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const totalPages = Math.ceil(total / pageSize);
   const goToPage = (p) => setPage(Math.min(totalPages, Math.max(1, p)));
 
+  /**
+   * Sort logic (Client-side sorting of the current page results)
+   */
   const sortedRows = [...rows].sort((a, b) => {
     if (sortBy === 'anomaly_score') return b.anomaly_score - a.anomaly_score; // highest % first
     if (sortBy === 'fare_amount')   return b.fare_amount - a.fare_amount;
@@ -62,6 +87,7 @@ export default function AnomalyTable({ filters }) {
 
   return (
     <div>
+      {/* Table Header & Controls */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <div>
           <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>Anomaly Table</span>
@@ -84,6 +110,7 @@ export default function AnomalyTable({ filters }) {
         </div>
       </div>
 
+      {/* Main Table Container */}
       <div style={{ overflowX: 'auto', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
         <table className="data-table">
           <thead>
@@ -99,6 +126,7 @@ export default function AnomalyTable({ filters }) {
           </thead>
           <tbody>
             {loading ? (
+              // Loading Skeleton State
               Array.from({ length: 10 }).map((_, i) => (
                 <tr key={i}>
                   {Array.from({ length: 7 }).map((_, j) => (
@@ -107,6 +135,7 @@ export default function AnomalyTable({ filters }) {
                 </tr>
               ))
             ) : sortedRows.length === 0 ? (
+              // Empty State
               <tr>
                 <td colSpan={8}>
                   <div className="empty-state">
@@ -116,6 +145,7 @@ export default function AnomalyTable({ filters }) {
                 </td>
               </tr>
             ) : sortedRows.map((row, i) => (
+              // Data Rows
               <tr key={row.anomaly_id || i}>
                 <td style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: 'var(--accent-cyan)' }}>
                   {row.ride_id?.slice(0, 13)}…
@@ -134,7 +164,7 @@ export default function AnomalyTable({ filters }) {
         </table>
       </div>
 
-      {/* Pagination */}
+      {/* Pagination Controls */}
       {totalPages > 1 && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, flexWrap: 'wrap', gap: 10 }}>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -143,6 +173,8 @@ export default function AnomalyTable({ filters }) {
           <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             <button className="btn btn-ghost btn-sm" onClick={() => goToPage(1)} disabled={page <= 1}>«</button>
             <button className="btn btn-ghost btn-sm" onClick={() => goToPage(page - 1)} disabled={page <= 1}>← Prev</button>
+            
+            {/* Quick Page Jump Input */}
             <input
               type="number" min={1} max={totalPages} placeholder="Go to..."
               value={jumpPage}
@@ -150,6 +182,7 @@ export default function AnomalyTable({ filters }) {
               onKeyDown={e => { if (e.key === 'Enter') { goToPage(parseInt(jumpPage)); setJumpPage(''); } }}
               style={{ width: 80, padding: '6px 10px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)', borderRadius: 8, color: 'white', fontSize: '0.8rem', outline: 'none', fontFamily: 'Outfit' }}
             />
+            
             <button className="btn btn-ghost btn-sm" onClick={() => goToPage(page + 1)} disabled={page >= totalPages}>Next →</button>
             <button className="btn btn-ghost btn-sm" onClick={() => goToPage(totalPages)} disabled={page >= totalPages}>»</button>
           </div>

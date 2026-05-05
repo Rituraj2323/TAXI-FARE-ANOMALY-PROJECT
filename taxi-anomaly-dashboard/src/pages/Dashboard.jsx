@@ -1,3 +1,9 @@
+/**
+ * Dashboard Component
+ * The central hub of the Admin application.
+ * Manages multiple views (Overview, Anomalies, Top-K, All Trips) through a tab-based system.
+ */
+
 import React, { useEffect, useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import MetricCard from '../components/MetricCard';
@@ -8,16 +14,22 @@ import TopKAnomalies from '../components/TopKAnomalies';
 import FilterPanel from '../components/FilterPanel';
 import { useAuth } from '../App';
 import { API } from '../config';
+
+// Initial state for filters used in search/explorer views
 const EMPTY_FILTERS = { dateFrom: '', dateTo: '', minFare: '', maxFare: '', zone: 'all' };
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('overview');
-  const [stats, setStats] = useState(null);
+  const [activeTab, setActiveTab] = useState('overview'); // Controls which sub-view is shown
+  const [stats, setStats] = useState(null); // Stores KPI data
   const [statsLoading, setStatsLoading] = useState(true);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [lastRefresh, setLastRefresh] = useState(new Date());
 
+  /**
+   * fetchStats Function
+   * Retrieves high-level KPIs from the backend (total trips, anomaly rate, etc.)
+   */
   const fetchStats = async () => {
     setStatsLoading(true);
     try {
@@ -31,10 +43,15 @@ export default function Dashboard() {
     }
   };
 
+  // Load initial stats on mount
   useEffect(() => { fetchStats(); }, []);
 
-  const handleRefresh = () => { fetchStats(); setLastRefresh(new Date()); };
+  const handleRefresh = () => { 
+    fetchStats(); 
+    setLastRefresh(new Date()); 
+  };
 
+  // UI Helper: Generates a time-based greeting for the user
   const greeting = () => {
     const h = new Date().getHours();
     if (h < 12) return 'Good morning';
@@ -46,16 +63,17 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard-layout">
+      {/* Navigation Sidebar */}
       <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
       <main className="dashboard-main">
-        {/* Header */}
+        {/* Dynamic Page Header based on Active Tab */}
         <div className="dashboard-header fade-in">
           <div>
             <h1 className="dashboard-title">
               {activeTab === 'overview' ? `${greeting()}, ${name} 👋` :
-             activeTab === 'anomalies' ? '🚨 Anomaly Explorer' :
-             activeTab === 'topk' ? '🏆 Top-K Alerts' : '🚖 All Trips'}
+               activeTab === 'anomalies' ? '🚨 Anomaly Explorer' :
+               activeTab === 'topk' ? '🏆 Top-K Alerts' : '🚖 All Trips'}
             </h1>
             <p className="dashboard-subtitle">
               {activeTab === 'overview'
@@ -76,10 +94,10 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* ── Overview Tab ────────────────────────────────────── */}
+        {/* ── View: Overview (KPIs and Charts) ────────────────────────────────────── */}
         {activeTab === 'overview' && (
           <>
-            {/* KPI Cards */}
+            {/* KPI Cards: Displays core metrics at a glance */}
             <div className="metrics-grid">
               <MetricCard
                 title="Total Trips Analyzed" icon="🚖" color="blue" loading={statsLoading}
@@ -103,7 +121,7 @@ export default function Dashboard() {
               />
             </div>
 
-            {/* Charts */}
+            {/* Visual Analytics: Trends and Distributions */}
             <div className="charts-row">
               <div className="chart-card">
                 <div className="chart-title">Daily Anomaly Trend</div>
@@ -116,11 +134,10 @@ export default function Dashboard() {
                 <div className="chart-container"><PieChartComponent /></div>
               </div>
             </div>
-
           </>
         )}
 
-        {/* ── Anomalies Tab ────────────────────────────────────── */}
+        {/* ── View: Anomaly Explorer (Filtered Table) ────────────────────────────────────── */}
         {activeTab === 'anomalies' && (
           <>
             <FilterPanel
@@ -134,14 +151,14 @@ export default function Dashboard() {
           </>
         )}
 
-        {/* ── Top-K Tab ─────────────────────────────────────────── */}
+        {/* ── View: Top-K (Highest Risk Alerts) ─────────────────────────────────────────── */}
         {activeTab === 'topk' && (
           <div className="card">
             <TopKAnomalies />
           </div>
         )}
 
-        {/* ── Trips Tab ─────────────────────────────────────────── */}
+        {/* ── View: All Trips (Complete Log) ─────────────────────────────────────────── */}
         {activeTab === 'trips' && (
           <>
             <FilterPanel
@@ -159,17 +176,23 @@ export default function Dashboard() {
   );
 }
 
-/* ── Inline All Trips Table ───────────────────────────────────────── */
+/**
+ * AllTripsTable Component
+ * Inline component for browsing the entire dataset.
+ * Includes heavy-duty pagination for millions of records.
+ */
 function AllTripsTable({ filters }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [jumpPage, setJumpPage] = useState('');
-  const pageSize = 100; // Show 100 records per page
+  const pageSize = 100; // Optimal page size for data browsing
 
+  // Reset page when search criteria change
   useEffect(() => { setPage(1); }, [filters]);
 
+  // Fetch data on page change or filter update
   useEffect(() => {
     setLoading(true);
     const params = new URLSearchParams({ page, page_size: pageSize });
@@ -180,7 +203,11 @@ function AllTripsTable({ filters }) {
 
     fetch(`${API}/trips?${params}`)
       .then(r => r.json())
-      .then(d => { setRows(d.results || []); setTotal(d.total || 0); setLoading(false); })
+      .then(d => { 
+        setRows(d.results || []); 
+        setTotal(d.total || 0); 
+        setLoading(false); 
+      })
       .catch(() => setLoading(false));
   }, [page, filters]);
 
@@ -189,6 +216,7 @@ function AllTripsTable({ filters }) {
 
   return (
     <div>
+      {/* List Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <div>
           <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>All Trips</span>
@@ -200,6 +228,8 @@ function AllTripsTable({ filters }) {
           Showing {((page-1)*pageSize+1).toLocaleString()}–{Math.min(page*pageSize, total).toLocaleString()} of {total.toLocaleString()}
         </div>
       </div>
+      
+      {/* Scrollable Data Table */}
       <div style={{ overflowX: 'auto', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
         <table className="data-table">
           <thead>
@@ -216,6 +246,7 @@ function AllTripsTable({ filters }) {
           </thead>
           <tbody>
             {loading ? (
+              // Skeleton UI for loading state
               Array.from({ length: 15 }).map((_, i) => (
                 <tr key={i}>{Array.from({ length: 8 }).map((_, j) => (
                   <td key={j}><div className="skeleton" style={{ height: 13, width: '80%' }} /></td>
@@ -242,6 +273,8 @@ function AllTripsTable({ filters }) {
           </tbody>
         </table>
       </div>
+
+      {/* Heavy-duty Pagination */}
       {totalPages > 1 && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, gap: 12, flexWrap: 'wrap' }}>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Page {page} of {totalPages.toLocaleString()}</span>

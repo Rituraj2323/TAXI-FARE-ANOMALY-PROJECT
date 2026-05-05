@@ -1,18 +1,29 @@
+/**
+ * Login Component
+ * Handles user authentication (Login and Registration).
+ * Features a dual-mode sliding form for a seamless user experience.
+ */
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../App';
 import { API } from '../config';
 
 export default function Login() {
-  const [mode, setMode] = useState('login'); // 'login' | 'register'
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [mode, setMode] = useState('login'); // Toggles between 'login' and 'register'
+  const [form, setForm] = useState({ name: '', email: '', password: '' }); // Stores input field values
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { login } = useAuth();
+  const { login } = useAuth(); // Global auth context function to store user data
   const navigate = useNavigate();
 
+  // Helper to update form state on every keystroke
   const handle = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
+  /**
+   * submit Function
+   * Sends a POST request to the authentication API (FastAPI/Django).
+   */
   const submit = async (e, forceMode) => {
     e.preventDefault();
     setError('');
@@ -31,8 +42,11 @@ export default function Login() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
+      
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Something went wrong');
+      
+      // On success: Save user session and redirect to dashboard
       login(data.user, data.access);
       navigate('/');
     } catch (err) {
@@ -47,7 +61,7 @@ export default function Login() {
 
       <div className="login-card fade-in" style={{ padding: '40px 48px', overflow: 'hidden' }}>
         
-        {/* Header Header */}
+        {/* Branding Section */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 24 }}>
           <div className="login-logo" style={{ margin: 0, width: 48, height: 48, fontSize: '1.4rem' }}>🚖</div>
           <div style={{ textAlign: 'left' }}>
@@ -56,7 +70,8 @@ export default function Login() {
           </div>
         </div>
 
-        {/* ─── Passenger Checker Prompt ─── */}
+        {/* ─── Passenger Checker Entry Point ─── */}
+        {/* Provides a clear path for non-admin users to use the tool */}
         <div style={{ 
           width: '100%', marginBottom: 30, textAlign: 'center', 
           background: 'rgba(255,255,255,0.03)', padding: 20, borderRadius: 'var(--radius-lg)',
@@ -82,8 +97,9 @@ export default function Login() {
 
         <div className="login-divider" style={{ marginBottom: 20, fontSize: '0.75rem' }}>STAFF & ADMIN ACCESS</div>
 
-        {/* ─── Sliding Tab Bar ─── */}
+        {/* ─── Sliding Tab Bar for Mode Switching ─── */}
         <div className="tab-bar" style={{ position: 'relative', display: 'flex', padding: '6px' }}>
+          {/* Animated Background Slider */}
           <div style={{
             position: 'absolute', top: 6, bottom: 6, width: 'calc(50% - 6px)',
             left: mode === 'login' ? '6px' : '50%',
@@ -108,7 +124,7 @@ export default function Login() {
           </button>
         </div>
 
-        {/* ─── Sliding Forms Container ─── */}
+        {/* ─── Sliding Forms Container (Smooth Transition) ─── */}
         <div style={{ position: 'relative', overflow: 'hidden', width: '100%', marginTop: 24, paddingBottom: 10 }}>
           <div style={{
             display: 'flex', width: '200%',
@@ -116,7 +132,7 @@ export default function Login() {
             transition: 'transform 0.6s cubic-bezier(0.25, 1, 0.3, 1)'
           }}>
 
-            {/* LOGIN FORM (Left Panel) */}
+            {/* LOGIN PANEL */}
             <div style={{ width: '50%', flexShrink: 0, paddingRight: '20px' }}>
               <form className="login-form" style={{ marginTop: 0 }} onSubmit={(e) => submit(e, 'login')}>
                 <div className="form-group">
@@ -135,7 +151,7 @@ export default function Login() {
               </form>
             </div>
 
-            {/* REGISTER FORM (Right Panel) */}
+            {/* REGISTER PANEL */}
             <div style={{ width: '50%', flexShrink: 0, paddingLeft: '20px' }}>
               <form className="login-form" style={{ marginTop: 0 }} onSubmit={(e) => submit(e, 'register')}>
                 <div className="form-group">
@@ -161,6 +177,7 @@ export default function Login() {
           </div>
         </div>
 
+        {/* Error Feedback */}
         {error && (
           <div className="login-error fade-in" style={{ marginTop: 16 }}>
             ⚠️ {error}

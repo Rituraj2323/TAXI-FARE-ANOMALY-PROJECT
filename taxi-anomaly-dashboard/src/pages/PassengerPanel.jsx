@@ -1,7 +1,17 @@
+/**
+ * PassengerPanel Component
+ * A public-facing tool that allows passengers to check if their taxi fare is reasonable.
+ * It compares user input against a Machine Learning model and standard NYC TLC rules.
+ */
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { API } from '../config';
 
+/**
+ * ScoreMeter Component
+ * A circular progress indicator that visualizes the 'Risk Score' of a trip.
+ */
 function ScoreMeter({ score, isAnomaly }) {
   const color = isAnomaly ? 'var(--accent-rose)' : score > 50 ? 'var(--accent-amber)' : 'var(--accent-emerald)';
   const circumference = 2 * Math.PI * 54;
@@ -10,9 +20,9 @@ function ScoreMeter({ score, isAnomaly }) {
   return (
     <div style={{ position: 'relative', width: 180, height: 180, margin: '0 auto' }}>
       <svg width="180" height="180" viewBox="0 0 120 120">
-        {/* Track */}
+        {/* Background Track Circle */}
         <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
-        {/* Progress */}
+        {/* Animated Progress Circle */}
         <circle
           cx="60" cy="60" r="54" fill="none"
           stroke={color} strokeWidth="8"
@@ -27,6 +37,7 @@ function ScoreMeter({ score, isAnomaly }) {
         position: 'absolute', inset: 0,
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
       }}>
+        {/* Central Score Display */}
         <div style={{ fontSize: '2rem', fontWeight: 800, fontFamily: 'Outfit', color, lineHeight: 1 }}>
           {score.toFixed(1)}%
         </div>
@@ -46,6 +57,10 @@ export default function PassengerPanel() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
 
+  /**
+   * handleCheck Function
+   * Submits the trip details to the backend API for anomaly analysis.
+   */
   const handleCheck = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -71,6 +86,7 @@ export default function PassengerPanel() {
     }
   };
 
+  // Logic to determine the text and color of the verdict based on API results
   const expected = result?.expected_fare?.toFixed(2);
   const inputDist = parseFloat(distance);
 
@@ -124,13 +140,12 @@ export default function PassengerPanel() {
         }}>Admin Login →</Link>
       </nav>
 
-      {/* ── Hero ── */}
+      {/* ── Main Content Area ── */}
       <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 24px' }}>
         <div style={{ width: '100%', maxWidth: 900, display: 'grid', gridTemplateColumns: result ? '1fr 1fr' : '1fr', gap: 32, alignItems: 'center', transition: 'all 0.5s' }}>
 
-          {/* ── Left: Form ── */}
+          {/* ── Left Side: Trip Details Form ── */}
           <div>
-            {/* Heading */}
             <div style={{ marginBottom: 36 }}>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(6,182,212,0.1)', border: '1px solid rgba(6,182,212,0.25)', borderRadius: 99, padding: '6px 14px', marginBottom: 16 }}>
                 <span style={{ fontSize: '0.7rem', fontFamily: 'Outfit', fontWeight: 700, color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>🛡 AI Fare Checker</span>
@@ -149,7 +164,7 @@ export default function PassengerPanel() {
               </p>
             </div>
 
-            {/* Form Card */}
+            {/* Input Form Card */}
             <div style={{
               background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(20px)',
               border: '1px solid var(--border-glass)', borderRadius: 'var(--radius-xl)',
@@ -212,7 +227,7 @@ export default function PassengerPanel() {
             </div>
           </div>
 
-          {/* ── Right: Result ── */}
+          {/* ── Right Side: Analysis Results (Visible after submission) ── */}
           {result && (
             <div className="fade-in" style={{
               background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(20px)',
@@ -221,10 +236,10 @@ export default function PassengerPanel() {
               boxShadow: result.is_anomaly ? '0 0 40px rgba(244,63,94,0.15)' : '0 0 40px rgba(16,185,129,0.15)'
             }}>
 
-              {/* Score Meter */}
+              {/* Graphical Risk Score */}
               <ScoreMeter score={result.score} isAnomaly={result.is_anomaly} />
 
-              {/* Verdict */}
+              {/* Dynamic Verdict Message */}
               <div style={{ marginTop: 24, marginBottom: 20 }}>
                 <div style={{ fontSize: '2rem', marginBottom: 8 }}>
                   {result.is_anomaly ? '🚨' : '✅'}
@@ -240,7 +255,7 @@ export default function PassengerPanel() {
                 </p>
               </div>
 
-              {/* Breakdown Stats */}
+              {/* Technical Breakdown Grid */}
               <div style={{
                 display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12,
                 background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-md)', padding: 16,
@@ -259,7 +274,7 @@ export default function PassengerPanel() {
                 ))}
               </div>
 
-              {/* Re-check */}
+              {/* Reset Tool Button */}
               <button
                 onClick={() => setResult(null)}
                 style={{

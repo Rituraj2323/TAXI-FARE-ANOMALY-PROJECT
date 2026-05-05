@@ -1,3 +1,9 @@
+"""
+Anomalies Router
+Provides API endpoints for the dashboard to consume real-time anomaly detection data.
+Integrates with the AnomalyService to fetch processed ML results.
+"""
+
 from fastapi import APIRouter
 from services.model import anomaly_service
 from typing import List
@@ -8,6 +14,10 @@ router = APIRouter()
 
 @router.get("/dashboard-stats")
 def get_dashboard_stats():
+    """
+    Returns aggregated statistics for the dashboard overview cards.
+    Includes total trips analyzed, anomaly counts, and rates.
+    """
     if not anomaly_service.is_ready:
         return {
             "total_trips_analyzed": 0,
@@ -28,6 +38,10 @@ def get_dashboard_stats():
 
 @router.get("/recent-trips")
 def get_recent_trips(limit: int = 10):
+    """
+    Returns a list of the most recent anomalies detected by the system.
+    This data is typically displayed in the 'Recent Alerts' table on the frontend.
+    """
     if not anomaly_service.is_ready:
         return []
     
@@ -47,6 +61,9 @@ def get_recent_trips(limit: int = 10):
 
 @router.get("/chart-data")
 def get_chart_data():
+    """
+    Returns time-series data for visualizing anomalies over time in the dashboard charts.
+    """
     if not anomaly_service.is_ready:
         return []
     
