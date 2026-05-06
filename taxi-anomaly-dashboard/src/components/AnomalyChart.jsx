@@ -16,24 +16,33 @@ import { API } from '../config';
  */
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
+  const d = payload[0].payload;
+  const normal = d.total_trips - d.anomalies;
+
   return (
     <div style={{
       background: 'var(--bg-card)', border: '1px solid var(--border-light)',
-      borderRadius: 10, padding: '10px 14px', fontSize: '0.78rem', minWidth: 150,
+      borderRadius: 10, padding: '10px 14px', fontSize: '0.78rem', minWidth: 160,
       boxShadow: 'var(--shadow-lg)',
     }}>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: 6 }}>{label}</p>
-      {payload.map((p, i) => (
-        <p key={i} style={{ color: p.color, fontWeight: 600 }}>
-          {p.name}: {typeof p.value === 'number' ? p.value.toFixed(2) : p.value}
-          {p.name === 'Anomaly Rate' ? '%' : ''}
-        </p>
-      ))}
+      <p style={{ color: 'white', fontWeight: 700, marginBottom: 8, borderBottom: '1px solid var(--border-glass)', paddingBottom: 4 }}>{label} Stats</p>
+      <p style={{ color: 'var(--accent-blue)', fontWeight: 600, marginBottom: 4 }}>
+        Anomaly Rate: {d.rate.toFixed(2)}%
+      </p>
+      <p style={{ color: 'var(--accent-rose)', fontSize: '0.72rem', marginBottom: 2 }}>
+        🚨 Anomalies: {d.anomalies.toLocaleString()}
+      </p>
+      <p style={{ color: 'var(--accent-emerald)', fontSize: '0.72rem', marginBottom: 2 }}>
+        ✅ Normal Rides: {normal.toLocaleString()}
+      </p>
+      <p style={{ color: 'var(--text-muted)', fontSize: '0.65rem', marginTop: 6 }}>
+        Total Trips: {d.total_trips.toLocaleString()}
+      </p>
     </div>
   );
 };
 
-export default function TrendLineChart() {
+export default function TrendLineChart({ onHover }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -51,6 +60,7 @@ export default function TrendLineChart() {
   // Format data for the chart (e.g., extracting date parts for labels)
   const formatted = data.map(d => ({
     ...d,
+    rate: d.anomaly_rate ?? d.rate ?? 0,
     label: d.time || (d.date ? d.date.slice(5) : ''),
   }));
 
@@ -69,7 +79,18 @@ export default function TrendLineChart() {
 
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <AreaChart data={formatted} margin={{ top: 4, right: 12, left: -20, bottom: 0 }}>
+      <AreaChart 
+        data={formatted} 
+        margin={{ top: 4, right: 12, left: -20, bottom: 0 }}
+        onMouseMove={(e) => {
+          if (e.activePayload && onHover) {
+            onHover(e.activePayload[0].payload);
+          }
+        }}
+        onMouseLeave={() => {
+          if (onHover) onHover(null);
+        }}
+      >
         {/* Define gradients for the chart area fills */}
         <defs>
           <linearGradient id="gradRate" x1="0" y1="0" x2="0" y2="1">

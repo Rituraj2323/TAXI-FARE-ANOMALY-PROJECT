@@ -30,16 +30,31 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent
   ) : null;
 };
 
-export default function DistributionPieChart() {
+export default function DistributionPieChart({ overrideData }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // If overrideData is provided (from daily hover), format it immediately
   useEffect(() => {
-    fetch(`${API}/anomalies/distribution`)
-      .then(r => r.json())
-      .then(d => { setData(d); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, []);
+    if (overrideData) {
+      const normal = overrideData.total_trips - overrideData.anomalies;
+      setData([
+        { name: 'Normal', value: normal },
+        { name: 'Anomaly', value: overrideData.anomalies },
+      ]);
+      setLoading(false);
+    }
+  }, [overrideData]);
+
+  useEffect(() => {
+    if (!overrideData) {
+      setLoading(true);
+      fetch(`${API}/anomalies/distribution`)
+        .then(r => r.json())
+        .then(d => { setData(d); setLoading(false); })
+        .catch(() => setLoading(false));
+    }
+  }, [overrideData]);
 
   if (loading) return (
     <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

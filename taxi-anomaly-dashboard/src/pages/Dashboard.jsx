@@ -25,6 +25,7 @@ export default function Dashboard() {
   const [statsLoading, setStatsLoading] = useState(true);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [hoveredChartData, setHoveredChartData] = useState(null);
 
   /**
    * fetchStats Function
@@ -126,12 +127,22 @@ export default function Dashboard() {
               <div className="chart-card">
                 <div className="chart-title">Daily Anomaly Trend</div>
                 <div className="chart-subtitle">Anomaly rate (%) and count over time</div>
-                <div className="chart-container"><AnomalyChart /></div>
+                <div className="chart-container">
+                  <AnomalyChart onHover={setHoveredChartData} />
+                </div>
               </div>
               <div className="chart-card">
-                <div className="chart-title">Trip Distribution</div>
-                <div className="chart-subtitle">Normal vs Anomalous trips</div>
-                <div className="chart-container"><PieChartComponent /></div>
+                <div className="chart-title">
+                  {hoveredChartData ? `Distribution: ${hoveredChartData.date}` : 'Trip Distribution'}
+                </div>
+                <div className="chart-subtitle">
+                  {hoveredChartData 
+                    ? `Showing data for specific day` 
+                    : 'Normal vs Anomalous trips (Total)'}
+                </div>
+                <div className="chart-container">
+                  <PieChartComponent overrideData={hoveredChartData} />
+                </div>
               </div>
             </div>
           </>
